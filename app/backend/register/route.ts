@@ -46,6 +46,7 @@ export async function POST(request: Request) {
       purchaseHistory: [],
       lastLoginDate: null,
       streak: 0,
+      refreshTokens: null,
     };
     users.push(newUser);
     writeUsers(users);
