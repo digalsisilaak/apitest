@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/update-dashboard-cache",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

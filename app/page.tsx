@@ -1,103 +1,160 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useEffect, useState, useRef, useCallback, memo } from "react";
+import { useInfiniteProducts, useAllCategory } from "./main/lib/apiFetch";
+import Dropdown from "./main/component/Dropdown";
+import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import InputMain from "./main/component/inputMain";
+import GridTable from "./main/component/gridTable";
+
+const Main = memo(function Main() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [inputSearchTerm, setInputSearchTerm] = useState("");
+  const [queryTerm, setQueryTerm] = useState("");
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const q = searchParams.get("q");
+    if (q) {
+      setInputSearchTerm(q);
+      setQueryTerm(q);
+    } else {
+      setInputSearchTerm("");
+      setQueryTerm("");
+    }
+  }, [pathname]);
+
+  const handleSearch = useCallback(() => {
+    setQueryTerm(inputSearchTerm);
+    const searchParams = new URLSearchParams(window.location.search);
+    if (inputSearchTerm) {
+      searchParams.set("q", inputSearchTerm);
+    } else {
+      searchParams.delete("q");
+    }
+    router.push(`${pathname}?${searchParams.toString()}`);
+    queryClient.invalidateQueries({ queryKey: ["infiniteProducts"] });
+  }, [pathname, inputSearchTerm, queryClient, router]);
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
+
+  const handleCategoryChange = useCallback(
+    (category: string) => {
+      setSelectedCategory(category);
+      queryClient.invalidateQueries({ queryKey: ["infiniteProducts"] });
+    },
+    [queryClient]
+  );
+
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    undefined
+  );
+  const { data: categoryData } = useAllCategory();
+
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error,
+  } = useInfiniteProducts(selectedCategory, queryTerm);
+
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!data && hasNextPage && !isLoading && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [data, hasNextPage, isLoading, isFetchingNextPage, fetchNextPage]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    const currentObserverTarget = observerTarget.current;
+
+    if (currentObserverTarget) {
+      observer.observe(currentObserverTarget);
+    }
+
+    return () => {
+      if (currentObserverTarget) {
+        observer.unobserve(currentObserverTarget);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <div className="p-4 min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <div className="flex flex-col justify-center items-center mb-5">
+        <h1 className="text-3xl font-bold mb-6  dark:text-gray-100">
+          Наши Продукты
+        </h1>
+        <InputMain
+          inputSearchTerm={inputSearchTerm}
+          handleKeyDown={handleKeyDown}
+          handleSearch={handleSearch}
+          setInputSearchTerm={setInputSearchTerm}
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      </div>
+      <div className="flex flex-col md:flex-row gap-4">
+        <Dropdown
+          selectedCategory={selectedCategory}
+          setSelectedCategory={handleCategoryChange}
+          categoryData={categoryData}
+        />
+        <div className="w-full">
+          {isLoading ? (
+            <p className="p-4 text-center dark:text-gray-200">
+              Загрузка продуктов...
+            </p>
+          ) : isError ? (
+            <p className="p-4 text-center text-red-500">
+              Ошибка: {error?.message}
+            </p>
+          ) : (
+            <>
+              <GridTable data={data} />
+              <div ref={observerTarget} className="h-1"></div>
+              {isFetchingNextPage && (
+                <p className="text-center mt-8 text-gray-500 dark:text-gray-400">
+                  Загрузка...
+                </p>
+              )}
+              {!hasNextPage && data?.pages && data.pages.length > 0 && (
+                <p className="text-center mt-8 text-gray-500 dark:text-gray-400">
+                  Все продукты загружены!
+                </p>
+              )}
+            </>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+      {!isLoading && data?.pages && data.pages.length === 0 && (
+        <p className="text-center mt-8 text-gray-500 dark:text-gray-400">
+          Товаров нет
+        </p>
+      )}
     </div>
   );
-}
+});
+
+export default Main;
