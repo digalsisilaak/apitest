@@ -34,8 +34,8 @@ export const useDashboardStore = create<DashboardState>()((set) => ({
       }
       const data = await response.json();
       set({ dashboardData: data });
-    } catch (error: any) {
-      set({ error: error.message });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message });
     } finally {
       set({ isLoading: false });
     }
