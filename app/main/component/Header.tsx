@@ -41,26 +41,36 @@ const Header: React.FC = () => {
 
   return (
     <header className="flex items-center justify-between gap-x-4 fixed dark:bg-gray-800 bg-gray-200 w-full p-4 shadow-md z-10 h-16">
-      <div className="flex items-center gap-4">
-        <Link href="/" className="font-bold text-lg dark:text-gray-200">
+      <div className="flex items-center gap-2">
+        <Link
+          href="/"
+          className="font-bold sm:text-lg text-16px dark:text-gray-200"
+        >
           Главная
+        </Link>
+        <Link
+          href="/comm"
+          className="font-bold sm:text-lg text-16px dark:text-gray-200"
+        >
+          Comments
         </Link>
       </div>
 
       <div className="flex items-center gap-4">
         {isLoggedIn ? (
           <>
-            <Link href="/my-account" className="font-bold dark:text-gray-200">
+            <Link
+              href="/my-account"
+              className="font-bold sm:text-lg text-16px dark:text-gray-200"
+            >
               {user?.username}
             </Link>
-            <Link href="/comm" className="font-bold dark:text-gray-200">
-              Комментарии
-            </Link>
+
             <Link
               href="/shopping_cart"
-              className="font-bold dark:text-gray-200"
+              className="font-bold dark:text-gray-200 sm:text-lg text-16px"
             >
-              Корзина
+              Shopping cart
             </Link>
             <div
               onMouseEnter={handleMouseEnter}
@@ -75,15 +85,15 @@ const Header: React.FC = () => {
           <>
             <Link
               href="/auth"
-              className="px-2 py-1 bg-green-500 text-white font-bold rounded-md hover:bg-green-600"
+              className="px-2 py-1 bg-green-500 text-white sm:text-lg text-16px font-bold rounded-md hover:bg-green-600"
             >
-              Войти
+              Sing
             </Link>
             <Link
               href="/auth/register"
-              className="px-2 py-1 bg-gray-500 text-white font-bold rounded-md hover:bg-gray-600"
+              className="px-2 py-1 bg-gray-500 text-white sm:text-lg text-16px font-bold rounded-md hover:bg-gray-600"
             >
-              Зарегистрироваться
+              Reg
             </Link>
           </>
         )}

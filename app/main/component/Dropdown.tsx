@@ -82,7 +82,7 @@ const Dropdown = memo(function Dropdown({
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ duration: 0.3 }}
-            className="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 z-50 shadow-lg p-4 pt-16 overflow-y-auto"
+            className="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 z-50 shadow-lg p-4 pt-16 pb-10 overflow-y-auto"
             onMouseLeave={() => !isMobile && setIsOpen(false)}
           >
             <button
