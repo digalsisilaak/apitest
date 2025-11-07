@@ -106,7 +106,7 @@ const Main = memo(function Main() {
     <div className="p-4 min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="flex flex-col justify-center items-center mb-5">
         <h1 className="text-3xl font-bold mb-6  dark:text-gray-100">
-          Наши Продукты
+          Продукты
         </h1>
         <InputMain
           inputSearchTerm={inputSearchTerm}

@@ -22,7 +22,7 @@ const CardTan = memo(function CardTan({ product, variants }: CardTanProps) {
       >
         <div className="flex flex-col items-center text-center">
           {product.images && product.images[0] && (
-            <div className="relative w-60 h-60">
+            <div className="relative w-full h-48 sm:h-60 mx-auto">
               <Image
                 src={product.thumbnail}
                 alt={product.title}
