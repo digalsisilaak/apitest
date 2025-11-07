@@ -3,13 +3,13 @@ import jwt from "jsonwebtoken";
 import { HistoryItem } from "../../type/type";
 import { parse } from "cookie";
 import dbConnect from "../../lib/dbConnect";
-import User from "../../models/User";
+import { User } from "../../models/User";
 
 const JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET || "your_access_secret_key";
 
 interface JwtPayload {
-  id: string; 
+  id: string;
   username: string;
 }
 
@@ -31,7 +31,7 @@ async function authenticateToken(request: Request): Promise<JwtPayload | null> {
 }
 
 export async function GET(request: Request) {
-  await dbConnect(); 
+  await dbConnect();
   const authenticatedUser = await authenticateToken(request);
   if (!authenticatedUser) {
     return NextResponse.json({ message: "Неавторизован" }, { status: 401 });
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  await dbConnect(); 
+  await dbConnect();
   const authenticatedUser = await authenticateToken(request);
   if (!authenticatedUser) {
     return NextResponse.json({ message: "Неавторизован" }, { status: 401 });
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
         timestamp: Date.now(),
       });
     });
-    await user.save(); 
+    await user.save();
     return NextResponse.json(
       { message: "История покупок успешно обновлена" },
       { status: 200 }

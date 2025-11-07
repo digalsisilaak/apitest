@@ -3,8 +3,8 @@ import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
+import { User } from "../../models/User";
 import dbConnect from "../../lib/dbConnect";
-import User from "../../models/User";
 
 const JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET || "your_access_secret_key";
@@ -44,16 +44,14 @@ export async function POST() {
       !user.refreshTokens ||
       !(await bcrypt.compare(refreshToken, user.refreshTokens))
     ) {
-      
       user.refreshTokens = null;
-      await user.save(); 
+      await user.save();
       return NextResponse.json(
         { message: "Invalid refresh token. Please log in again." },
         { status: 403 }
       );
     }
 
-    
     user.refreshTokens = null;
     await user.save();
 
@@ -72,7 +70,7 @@ export async function POST() {
     const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
     user.refreshTokens = hashedNewRefreshToken;
 
-    await user.save(); 
+    await user.save();
 
     const accessTokenCookie = serialize("authToken", newAccessToken, {
       httpOnly: true,

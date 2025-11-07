@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import dbConnect from "../../lib/dbConnect";
-import User from "../../models/User";
+import { User } from "../../models/User";
 
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "your_refresh_secret_key";
@@ -23,7 +23,6 @@ export async function POST() {
           JWT_REFRESH_SECRET
         ) as jwt.JwtPayload;
 
-        
         const user = await User.findOne({ _id: decoded.id });
 
         if (user) {
@@ -32,7 +31,7 @@ export async function POST() {
             (await bcrypt.compare(refreshTokenValue, user.refreshTokens))
           ) {
             user.refreshTokens = null;
-            await user.save(); 
+            await user.save();
           }
         }
       } catch (error) {

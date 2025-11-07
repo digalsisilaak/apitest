@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
+import { User } from "../../models/User";
 import dbConnect from "../../lib/dbConnect";
-import User from "../../models/User";
 
 export async function GET(request: Request) {
   try {
-    await dbConnect(); 
+    await dbConnect();
     const { searchParams } = new URL(request.url);
     const showAll = searchParams.get("all") === "true";
 
     const allUsersData = await User.find(
       {},
-      { username: 1, streak: 1, _id: 0 } 
-    ).sort({ streak: -1, username: 1 }); 
+      { username: 1, streak: 1, _id: 0 }
+    ).sort({ streak: -1, username: 1 });
 
     let responseData: { username: string; streak: number }[];
     if (showAll) {

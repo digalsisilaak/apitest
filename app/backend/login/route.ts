@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import dbConnect from "../../lib/dbConnect";
-import User from "../../models/User";
+import { User } from "../../models/User";
 
 const JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET || "your_access_secret_key";
@@ -71,10 +71,7 @@ export async function POST(request: Request) {
     }
     user.lastLoginDate = todayStr;
 
-    
     await user.save();
-
-    
 
     const accessToken = jwt.sign(
       { id: user.id, username: user.username },
@@ -91,7 +88,7 @@ export async function POST(request: Request) {
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
     user.refreshTokens = hashedRefreshToken;
-    await user.save(); 
+    await user.save();
 
     const accessTokenCookie = serialize("authToken", accessToken, {
       httpOnly: true,

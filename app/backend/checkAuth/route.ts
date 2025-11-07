@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { parse } from "cookie";
 import dbConnect from "../../lib/dbConnect";
-import User from "../../models/User";
+import { User } from "../../models/User";
 
 const JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET || "your_access_secret_key";
 
 interface JwtPayload {
-  id: string; 
+  id: string;
   username: string;
 }
 
@@ -30,7 +30,7 @@ async function authenticateToken(request: Request): Promise<JwtPayload | null> {
 }
 
 export async function GET(request: Request) {
-  await dbConnect(); 
+  await dbConnect();
   const authenticatedUser = await authenticateToken(request);
 
   if (!authenticatedUser) {
@@ -77,13 +77,13 @@ export async function GET(request: Request) {
     }
     user.lastLoginDate = todayStr;
 
-    await user.save(); 
+    await user.save();
 
     return NextResponse.json(
       {
         isAuthenticated: true,
         user: {
-          id: user.id, 
+          id: user.id,
           username: user.username,
           purchaseHistory: user.purchaseHistory,
           streak: user.streak,
