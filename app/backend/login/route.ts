@@ -1,36 +1,18 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { User } from "../../type/type";
 import { serialize } from "cookie";
-import { updateSpecificUserInCache } from "../../../scripts/dashboardUtils";
+import dbConnect from "../../lib/dbConnect";
+import User from "../../models/User";
 
-const usersFilePath = path.join(process.cwd(), "app", "backend", "users.json");
 const JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET || "your_access_secret_key";
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "your_refresh_secret_key";
 
-function readUsers(): User[] {
-  if (!fs.existsSync(usersFilePath)) {
-    return [];
-  }
-  const data = fs.readFileSync(usersFilePath, "utf-8");
-  const users: User[] = JSON.parse(data);
-  return users.map((user) => ({
-    ...user,
-    refreshTokens: user.refreshTokens || null,
-  }));
-}
-
-function writeUsers(users: User[]): void {
-  fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), "utf-8");
-}
-
 export async function POST(request: Request) {
   try {
+    await dbConnect();
     const { username, password } = await request.json();
 
     if (!username || !password) {
@@ -40,8 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const users: User[] = readUsers();
-    const user = users.find((u: User) => u.username === username);
+    const user = await User.findOne({ username });
 
     if (!user) {
       return NextResponse.json(
@@ -90,16 +71,10 @@ export async function POST(request: Request) {
     }
     user.lastLoginDate = todayStr;
 
-    const userIndex = users.findIndex((u: User) => u.id === user.id);
-    if (userIndex !== -1) {
-      users[userIndex] = user;
-      writeUsers(users);
+    
+    await user.save();
 
-      updateSpecificUserInCache({
-        username: user.username,
-        streak: user.streak || 0,
-      });
-    }
+    
 
     const accessToken = jwt.sign(
       { id: user.id, username: user.username },
@@ -116,7 +91,7 @@ export async function POST(request: Request) {
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
 
     user.refreshTokens = hashedRefreshToken;
-    writeUsers(users);
+    await user.save(); 
 
     const accessTokenCookie = serialize("authToken", accessToken, {
       httpOnly: true,

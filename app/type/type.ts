@@ -10,7 +10,7 @@ export interface Product {
 }
 
 export interface User {
-  id: number;
+  id: string; // Changed from number to string to match MongoDB _id and Mongoose virtual 'id'
   username: string;
   password: string;
   purchaseHistory: HistoryItem[];

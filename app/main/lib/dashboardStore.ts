@@ -1,16 +1,13 @@
 import { create } from "zustand";
-
 export interface dashUser {
   username: string;
   streak: number;
 }
 
-interface DashboardData {
-  dashboard: dashUser[];
-}
+
 
 interface DashboardState {
-  dashboardData: DashboardData | null;
+  dashboardData: dashUser[] | null; 
   isLoading: boolean;
   error: string | null;
   fetchDashboardData: (showAll?: boolean) => Promise<void>;
@@ -32,8 +29,9 @@ export const useDashboardStore = create<DashboardState>()((set) => ({
       if (!response.ok) {
         throw new Error("Failed to fetch dashboard data");
       }
-      const data = await response.json();
-      set({ dashboardData: data });
+      type DashboardApiResponse = { message: string; dashboard: dashUser[]; };
+      const data: DashboardApiResponse = await response.json();
+      set({ dashboardData: data.dashboard });
     } catch (error: unknown) {
       set({ error: (error as Error).message });
     } finally {

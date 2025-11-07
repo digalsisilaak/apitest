@@ -3,27 +3,8 @@ import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
-import fs from "fs";
-import path from "path";
-import { User } from "../../type/type";
-
-const usersFilePath = path.join(process.cwd(), "app", "backend", "users.json");
-
-function readUsers(): User[] {
-  if (!fs.existsSync(usersFilePath)) {
-    return [];
-  }
-  const data = fs.readFileSync(usersFilePath, "utf-8");
-  const users: User[] = JSON.parse(data);
-  return users.map((user) => ({
-    ...user,
-    refreshTokens: user.refreshTokens || null,
-  }));
-}
-
-function writeUsers(users: User[]): void {
-  fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), "utf-8");
-}
+import dbConnect from "../../lib/dbConnect";
+import User from "../../models/User";
 
 const JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET || "your_access_secret_key";
@@ -32,6 +13,7 @@ const JWT_REFRESH_SECRET =
 
 export async function POST() {
   try {
+    await dbConnect();
     const cookieStore = await cookies();
     const refreshToken = cookieStore.get("refreshToken")?.value;
 
@@ -52,35 +34,37 @@ export async function POST() {
       );
     }
 
-    const users = readUsers();
-    const userIndex = users.findIndex((u) => u.id === decoded.id);
+    const user = await User.findOne({ _id: decoded.id });
 
-    if (userIndex === -1) {
+    if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
-
-    const user = users[userIndex];
 
     if (
       !user.refreshTokens ||
       !(await bcrypt.compare(refreshToken, user.refreshTokens))
     ) {
+      
+      user.refreshTokens = null;
+      await user.save(); 
       return NextResponse.json(
-        { message: "Invalid refresh token" },
+        { message: "Invalid refresh token. Please log in again." },
         { status: 403 }
       );
     }
 
+    
     user.refreshTokens = null;
+    await user.save();
 
     const newAccessToken = jwt.sign(
-      { id: decoded.id, username: decoded.username },
+      { id: user.id, username: user.username },
       JWT_ACCESS_SECRET,
       { expiresIn: "15m" }
     );
 
     const newRefreshToken = jwt.sign(
-      { id: decoded.id, username: decoded.username },
+      { id: user.id, username: user.username },
       JWT_REFRESH_SECRET,
       { expiresIn: "7d" }
     );
@@ -88,7 +72,7 @@ export async function POST() {
     const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
     user.refreshTokens = hashedNewRefreshToken;
 
-    writeUsers(users);
+    await user.save(); 
 
     const accessTokenCookie = serialize("authToken", newAccessToken, {
       httpOnly: true,

@@ -1,26 +1,11 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 import bcrypt from "bcryptjs";
-import { User } from "../../type/type";
-import { updateSpecificUserInCache } from "../../../scripts/dashboardUtils";
-
-const usersFilePath = path.join(process.cwd(), "app", "backend", "users.json");
-
-function readUsers(): User[] {
-  if (!fs.existsSync(usersFilePath)) {
-    return [];
-  }
-  const data = fs.readFileSync(usersFilePath, "utf-8");
-  return JSON.parse(data);
-}
-
-function writeUsers(users: User[]) {
-  fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2));
-}
+import dbConnect from "../../lib/dbConnect";
+import User from "../../models/User";
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
     const { username, password } = await request.json();
 
     if (!username || !password) {
@@ -30,8 +15,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const users: User[] = readUsers();
-    if (users.some((user: User) => user.username === username)) {
+    const existingUser = await User.findOne({ username });
+
+    if (existingUser) {
       return NextResponse.json(
         { message: "Пользователь с таким именем уже существует" },
         { status: 409 }
@@ -39,22 +25,16 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser: User = {
-      id: Date.now(),
+    const newUser = await User.create({
       username,
       password: hashedPassword,
       purchaseHistory: [],
       lastLoginDate: null,
       streak: 0,
       refreshTokens: null,
-    };
-    users.push(newUser);
-    writeUsers(users);
-
-    updateSpecificUserInCache({
-      username: newUser.username,
-      streak: newUser.streak || 0,
     });
+
+  
 
     return NextResponse.json(
       {

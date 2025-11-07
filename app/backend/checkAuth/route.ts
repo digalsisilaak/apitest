@@ -1,29 +1,15 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 import jwt from "jsonwebtoken";
 import { parse } from "cookie";
-import { User } from "../../type/type";
+import dbConnect from "../../lib/dbConnect";
+import User from "../../models/User";
 
-const usersFilePath = path.join(process.cwd(), "app", "backend", "users.json");
 const JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET || "your_access_secret_key";
 
 interface JwtPayload {
-  id: number;
+  id: string; 
   username: string;
-}
-
-function readUsers(): User[] {
-  if (!fs.existsSync(usersFilePath)) {
-    return [];
-  }
-  const data = fs.readFileSync(usersFilePath, "utf-8");
-  return JSON.parse(data);
-}
-
-function writeUsers(users: User[]): void {
-  fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), "utf-8");
 }
 
 async function authenticateToken(request: Request): Promise<JwtPayload | null> {
@@ -44,6 +30,7 @@ async function authenticateToken(request: Request): Promise<JwtPayload | null> {
 }
 
 export async function GET(request: Request) {
+  await dbConnect(); 
   const authenticatedUser = await authenticateToken(request);
 
   if (!authenticatedUser) {
@@ -51,8 +38,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const users: User[] = readUsers();
-    const user = users.find((u: User) => u.id === authenticatedUser.id);
+    const user = await User.findOne({ _id: authenticatedUser.id });
 
     if (!user) {
       return NextResponse.json(
@@ -91,17 +77,13 @@ export async function GET(request: Request) {
     }
     user.lastLoginDate = todayStr;
 
-    const userIndex = users.findIndex((u: User) => u.id === user.id);
-    if (userIndex !== -1) {
-      users[userIndex] = user;
-      writeUsers(users);
-    }
+    await user.save(); 
 
     return NextResponse.json(
       {
         isAuthenticated: true,
         user: {
-          id: user.id,
+          id: user.id, 
           username: user.username,
           purchaseHistory: user.purchaseHistory,
           streak: user.streak,

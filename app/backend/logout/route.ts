@@ -3,32 +3,15 @@ import { serialize } from "cookie";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import fs from "fs";
-import path from "path";
-import { User } from "../../type/type";
+import dbConnect from "../../lib/dbConnect";
+import User from "../../models/User";
 
-const usersFilePath = path.join(process.cwd(), "app", "backend", "users.json");
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "your_refresh_secret_key";
 
-function readUsers(): User[] {
-  if (!fs.existsSync(usersFilePath)) {
-    return [];
-  }
-  const data = fs.readFileSync(usersFilePath, "utf-8");
-  const users: User[] = JSON.parse(data);
-  return users.map((user) => ({
-    ...user,
-    refreshTokens: user.refreshTokens || null,
-  }));
-}
-
-function writeUsers(users: User[]): void {
-  fs.writeFileSync(usersFilePath, JSON.stringify(users, null, 2), "utf-8");
-}
-
 export async function POST() {
   try {
+    await dbConnect();
     const cookieStore = await cookies();
     const refreshTokenValue = cookieStore.get("refreshToken")?.value;
 
@@ -40,17 +23,16 @@ export async function POST() {
           JWT_REFRESH_SECRET
         ) as jwt.JwtPayload;
 
-        const users = readUsers();
-        const userIndex = users.findIndex((u) => u.id === decoded.id);
+        
+        const user = await User.findOne({ _id: decoded.id });
 
-        if (userIndex !== -1) {
-          const user = users[userIndex];
+        if (user) {
           if (
             user.refreshTokens &&
             (await bcrypt.compare(refreshTokenValue, user.refreshTokens))
           ) {
             user.refreshTokens = null;
-            writeUsers(users);
+            await user.save(); 
           }
         }
       } catch (error) {
