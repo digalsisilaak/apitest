@@ -35,21 +35,19 @@ const UserSchema: Schema = new Schema({
 });
 
 UserSchema.virtual("id").get(function (this: mongoose.Document) {
-  return this._id.toHexString();
+  return (this._id as mongoose.Types.ObjectId).toHexString();
 });
-
 
 UserSchema.set("toJSON", {
   virtuals: true,
-  transform: (doc, ret: any) => {
-    ret.id = ret._id.toHexString();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transform: (doc: Document, ret: any) => {
+    ret.id = (ret._id as mongoose.Types.ObjectId).toHexString();
     delete ret._id;
     delete ret.__v;
     return ret;
   },
 });
 
-const User: Model<IUser> =
+export const User: Model<IUser> =
   mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
-
-export default User;
