@@ -15,7 +15,7 @@ if (!cached) {
 
 async function dbConnect() {
   if (cached.conn) {
-    return cached.conn;
+    return cached.conn; //2
   }
 
   if (!cached.promise) {
