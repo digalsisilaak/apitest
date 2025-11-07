@@ -53,6 +53,9 @@ const Header: React.FC = () => {
             <Link href="/my-account" className="font-bold dark:text-gray-200">
               {user?.username}
             </Link>
+            <Link href="/comm" className="font-bold dark:text-gray-200">
+              Комментарии
+            </Link>
             <Link
               href="/shopping_cart"
               className="font-bold dark:text-gray-200"
