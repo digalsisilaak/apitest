@@ -8,10 +8,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const showAll = searchParams.get("all") === "true";
 
-    const allUsersData = await User.find(
-      {},
-      { username: 1, streak: 1, _id: 0 }
-    ).sort({ streak: -1, username: 1 });
+    const allUsersData = await User.find({}, { username: 1, streak: 1 }).sort({
+      streak: -1,
+      username: 1,
+    });
 
     let responseData: { username: string; streak: number }[];
     if (showAll) {
